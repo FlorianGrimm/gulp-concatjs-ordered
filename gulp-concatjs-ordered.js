@@ -1,6 +1,6 @@
 /* jshint node:true */
 'use strict';
-Object.defineProperty(exports, "__esModule", { value: true });
+
 var os = require("os");
 var path = require("path");
 var gutil = require("gulp-util");
@@ -12,7 +12,9 @@ var ConcatWithSourcemaps = require("concat-with-sourcemaps");
 var defaults = {
     sep: os.EOL,
     process: false,
-    passthrough: false
+    passthrough: false,
+    addUnknown: false,
+    verbose:false
 };
 var PluginError = gutil.PluginError;
 var gutilFile = gutil.File;
@@ -21,7 +23,11 @@ function gulpconcatjsordered(name, sortFileNames, config) {
     var concat, firstFile, fileName;
     var mapNamesToInput = {};
     var inputTuple = (sortFileNames || []).map(function (value, idx) {
-        mapNamesToInput[path.resolve(value)] = idx;
+        var resolved = path.resolve(value);
+        if (options.verbose){            
+            console.log("value:"+value+" resolved:"+resolved);
+        }
+        mapNamesToInput[resolved] = idx;
         return [];
     });
     //
@@ -49,16 +55,47 @@ function gulpconcatjsordered(name, sortFileNames, config) {
         var idx = mapNamesToInput[file.path];
 
         var tuple;
-        if (typeof (idx) === "undefined") {
-            tuple = [];
-            inputTuple.push(tuple);
-        }
-        else {
-            tuple = inputTuple[idx];
-        }
-        tuple.push(file);
-        if (options.passthrough) {
-            this.push(file);
+        if (options.addUnknown){
+            if (typeof (idx) === "undefined") {
+                if (options.verbose){            
+                    console.log("unknown but concat: "+file.path);
+                }
+                tuple = [];
+                inputTuple.push(tuple);
+            }
+            else {
+                if (options.verbose){            
+                    console.log("known so concat: "+file.path);
+                }
+                tuple = inputTuple[idx];
+            }
+            tuple.push(file);
+            if (options.passthrough) {
+                this.push(file);
+            }
+        } else {
+            if (typeof (idx) === "undefined") {
+                if (options.passthrough) {
+                    if (options.verbose){            
+                        console.log("unknown so passthrough: "+file.path);
+                    }
+                    this.push(file);
+                } else {
+                    if (options.verbose){            
+                        console.log("unknown ignore: "+file.path);
+                    }
+                }
+            }
+            else {
+                if (options.verbose){            
+                    console.log("known so concat: "+file.path);
+                }
+                tuple = inputTuple[idx];
+                tuple.push(file);
+                if (options.passthrough) {
+                    this.push(file);
+                }
+            }
         }
         next();
     }
