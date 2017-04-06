@@ -10,9 +10,11 @@ var combine = require("stream-combiner2");
 var gulpif = require("gulp-if");
 var ConcatWithSourcemaps = require("concat-with-sourcemaps");
 var defaults = {
-    sep: os.EOL,
+    sep: os.EOL,    
     process: false,
     passthrough: false,
+    passthroughKnown: false,
+    passthroughUnknown: false,
     addUnknown: false,
     verbose:false
 };
@@ -57,25 +59,38 @@ function gulpconcatjsordered(name, sortFileNames, config) {
         var tuple;
         if (options.addUnknown){
             if (typeof (idx) === "undefined") {
-                if (options.verbose){            
-                    console.log("unknown but concat: "+file.path);
-                }
                 tuple = [];
                 inputTuple.push(tuple);
+                tuple.push(file);
+                if (options.passthrough || options.passthroughUnknown){
+                    this.push(file);
+                    if (options.verbose){            
+                        console.log("unknown but concat and passthrough: "+file.path);
+                    }
+                } else {
+                    if (options.verbose){            
+                        console.log("unknown but concat: "+file.path);
+                    }
+                }
             }
             else {
-                if (options.verbose){            
-                    console.log("known so concat: "+file.path);
-                }
                 tuple = inputTuple[idx];
-            }
-            tuple.push(file);
-            if (options.passthrough) {
-                this.push(file);
+                tuple.push(file);
+                
+                if (options.passthrough || options.passthroughKnown){
+                    this.push(file);
+                    if (options.verbose){            
+                        console.log("known so concat and passthrough: "+file.path);
+                    }
+                } else {
+                    if (options.verbose){            
+                        console.log("known so concat: "+file.path);
+                    }
+                }
             }
         } else {
             if (typeof (idx) === "undefined") {
-                if (options.passthrough) {
+                if (options.passthrough || options.passthroughUnknown){
                     if (options.verbose){            
                         console.log("unknown so passthrough: "+file.path);
                     }
@@ -87,13 +102,20 @@ function gulpconcatjsordered(name, sortFileNames, config) {
                 }
             }
             else {
-                if (options.verbose){            
-                    console.log("known so concat: "+file.path);
-                }
                 tuple = inputTuple[idx];
                 tuple.push(file);
                 if (options.passthrough) {
                     this.push(file);
+                }
+                if (options.passthrough || options.passthroughKnown){
+                    if (options.verbose){            
+                        console.log("known so concat and passthrough: "+file.path);
+                    }
+                    this.push(file);
+                } else {
+                    if (options.verbose){            
+                        console.log("known so concat: "+file.path);
+                    }
                 }
             }
         }
