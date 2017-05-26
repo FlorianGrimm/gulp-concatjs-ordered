@@ -129,6 +129,9 @@ function gulpconcatjsordered(name, sortFileNames, config) {
         var idx, file;
         for (idx = 0; idx < inputTuple.length; idx++) {
             file = inputTuple[idx][0];
+            if (!file){
+                continue;
+            }
             if (!firstFile) {
                 firstFile = file;
                 if (!name || typeof name === 'string') {
@@ -149,7 +152,7 @@ function gulpconcatjsordered(name, sortFileNames, config) {
                     throw new PluginError('gulp-concatjs-ordered', 'Missing path');
                 }
                 // Initialize concat
-                concat = new ConcatWithSourcemaps(!!file.sourceMap, fileName, options.sep);
+                concat = new ConcatWithSourcemaps(!(typeof(file) === "undefined") && !(typeof(file.sourceMap) === "undefined") && !!file.sourceMap, fileName, options.sep);
             }
             var contents = file.contents;
             // Support process as a function
