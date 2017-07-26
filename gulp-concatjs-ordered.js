@@ -54,7 +54,11 @@ function gulpconcatjsordered(name, sortFileNames, config) {
             next();
             return;
         }
-        var idx = mapNamesToInput[file.path];
+        var file_path = path.resolve(file.path);
+        var idx = mapNamesToInput[file_path];
+        if (typeof (idx) === "undefined") {
+            idx = mapNamesToInput[file.path];
+        }
 
         var tuple;
         if (options.addUnknown){
@@ -65,11 +69,11 @@ function gulpconcatjsordered(name, sortFileNames, config) {
                 if (options.passthrough || options.passthroughUnknown){
                     this.push(file);
                     if (options.verbose){            
-                        console.log("unknown but concat and passthrough: "+file.path);
+                        console.log("unknown but concat and passthrough: "+file_path);
                     }
                 } else {
                     if (options.verbose){            
-                        console.log("unknown but concat: "+file.path);
+                        console.log("unknown but concat: "+file_path);
                     }
                 }
             }
@@ -80,11 +84,11 @@ function gulpconcatjsordered(name, sortFileNames, config) {
                 if (options.passthrough || options.passthroughKnown){
                     this.push(file);
                     if (options.verbose){            
-                        console.log("known so concat and passthrough: "+file.path);
+                        console.log("known so concat and passthrough: "+file_path);
                     }
                 } else {
                     if (options.verbose){            
-                        console.log("known so concat: "+file.path);
+                        console.log("known so concat: "+file_path);
                     }
                 }
             }
@@ -92,12 +96,12 @@ function gulpconcatjsordered(name, sortFileNames, config) {
             if (typeof (idx) === "undefined") {
                 if (options.passthrough || options.passthroughUnknown){
                     if (options.verbose){            
-                        console.log("unknown so passthrough: "+file.path);
+                        console.log("unknown so passthrough: "+file_path);
                     }
                     this.push(file);
                 } else {
                     if (options.verbose){            
-                        console.log("unknown ignore: "+file.path);
+                        console.log("unknown ignore: "+file_path);
                     }
                 }
             }
@@ -109,12 +113,12 @@ function gulpconcatjsordered(name, sortFileNames, config) {
                 }
                 if (options.passthrough || options.passthroughKnown){
                     if (options.verbose){            
-                        console.log("known so concat and passthrough: "+file.path);
+                        console.log("known so concat and passthrough: "+file_path);
                     }
                     this.push(file);
                 } else {
                     if (options.verbose){            
-                        console.log("known so concat: "+file.path);
+                        console.log("known so concat: "+file_path);
                     }
                 }
             }
@@ -164,10 +168,6 @@ function gulpconcatjsordered(name, sortFileNames, config) {
                 contents = new Buffer(gutil.template(contents, extend({ file: file }, options.process)));
             }
             concat.add(file.relative, contents.toString(), file.sourceMap);
-            // if(options.passthrough) {
-            //     /* jshint validthis:true */
-            //     this.push(file);
-            // }
         }
         if (firstFile) {
             var joinedFile = firstFile.clone({ contents: false });
@@ -185,7 +185,7 @@ function gulpconcatjsordered(name, sortFileNames, config) {
     }
     return through.obj(addFn, doneFn);
 }
-;
+
 module.exports = gulpconcatjsordered;
 function header(header, encoding) {
     return through.obj(function (file, encoding, next) {
@@ -193,7 +193,7 @@ function header(header, encoding) {
         next(null, file);
     });
 }
-;
+
 module.exports.header = header;
 function footer(footer, encoding) {
     return through.obj(function (file, encoding, next) {
@@ -201,12 +201,13 @@ function footer(footer, encoding) {
         next(null, file);
     });
 }
-;
+
 module.exports.footer = footer;
 function processJsSource(src) {
     /* jshint validthis:true */
     return os.EOL + '// Source: ' + this.relative + os.EOL + src.trim().replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1');
 }
+
 module.exports.scripts = function (name, sortFileNames, options) {
     if (!options)
         options = {};
